@@ -1,0 +1,20 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+.streamlit/
+.env
+
+# Large files and datasets
+*.mp4
+*.blend
+*.zip
+*.exe
+*.log
+# If data/ and dataset/ and ipl_data/ are large, maybe ignore them. I will ignore specific large types.
+# data/
+# dataset/
+# ipl_data/
+
+# Notebook checkpoints
+.ipynb_checkpoints/

@@ -1,0 +1,134 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --bg-dark: #070B19;
+  --bg-glass: rgba(15, 23, 42, 0.4);
+  --bg-glass-hover: rgba(30, 41, 59, 0.6);
+  --border-glass: rgba(255, 255, 255, 0.1);
+  --accent-neon: #0ea5e9;
+  --accent-glow: rgba(14, 165, 233, 0.5);
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  
+  --radius-lg: 16px;
+  --radius-md: 12px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-dark);
+  background-image: 
+    radial-gradient(circle at 15% 50%, rgba(14, 165, 233, 0.1), transparent 25%),
+    radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.1), transparent 25%);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism Utilities */
+.glass-panel {
+  background: var(--bg-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.glass-panel:hover {
+  background: var(--bg-glass-hover);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px var(--accent-glow);
+}
+
+.glass-card {
+  background: rgba(30, 41, 59, 0.5);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.glass-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--accent-neon);
+}
+
+/* Typography */
+h1, h2, h3, h4 {
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+
+.gradient-text {
+  background: linear-gradient(90deg, #38bdf8, #818cf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Layout */
+.app-container {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  padding: 24px;
+  border-right: 1px solid var(--border-glass);
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(20px);
+}
+
+.main-content {
+  padding: 32px;
+  overflow-y: auto;
+}
+
+/* Form Elements */
+select, input {
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--border-glass);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.3s;
+}
+
+select:focus, input:focus {
+  border-color: var(--accent-neon);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+option {
+  background: var(--bg-dark);
+  color: var(--text-primary);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+/* Plotly overrides to ensure transparent backgrounds */
+.js-plotly-plot .plotly .bg {
+  fill: transparent !important;
+}

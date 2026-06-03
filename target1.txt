@@ -1,0 +1,270 @@
+    def create_strike_rate_comparison(df, phase=None):
+        """Create strike rate comparison chart for top batters across teams"""
+        if phase:
+            data = df[df['phase'] == phase].copy()
+        else:
+            data = df.copy()
+        
+        batter_stats = data.groupby(['batter', 'batting_team']).agg({
+            'runs_off_bat': 'sum',
+            'ball': 'count'
+        }).reset_index()
+        
+        batter_stats = batter_stats[batter_stats['ball'] >= 50]
+        batter_stats['strike_rate'] = (batter_stats['runs_off_bat'] / batter_stats['ball'] * 100).round(2)
+        batter_stats = batter_stats.sort_values('strike_rate', ascending=False).head(15)
+        
+        chart = alt.Chart(batter_stats).mark_bar().encode(
+            x=alt.X('strike_rate:Q', title='Strike Rate', scale=alt.Scale(domain=[0, 250])),
+            y=alt.Y('batter:N', sort='-x', title='Batter'),
+            color=alt.Color('batting_team:N', title='Team', scale=alt.Scale(scheme='category20')),
+            tooltip=[
+                alt.Tooltip('batter:N', title='Player'),
+                alt.Tooltip('batting_team:N', title='Team'),
+                alt.Tooltip('strike_rate:Q', title='Strike Rate', format='.2f'),
+                alt.Tooltip('runs_off_bat:Q', title='Total Runs'),
+                alt.Tooltip('ball:Q', title='Balls Faced')
+            ]
+        ).properties(
+            width=700,
+            height=500,
+            title='Top 15 Batters by Strike Rate (min 50 balls)'
+        ).interactive()
+        
+        return chart
+    
+    def create_boundary_percentage_chart(df, teams, phase=None):
+        """Create comprehensive boundary and dot ball analysis from scratch"""
+        results = []
+        
+        # Collect data for each team
+        for team in teams:
+            team_data = df[df['batting_team'] == team].copy()
+            
+            # Apply phase filter if specified
+            if phase:
+                team_data = team_data[team_data['phase'] == phase]
+            
+            total_balls = len(team_data)
+            if total_balls == 0:
+                continue
+            
+            # Calculate detailed statistics
+            fours = len(team_data[team_data['runs_off_bat'] == 4])
+            sixes = len(team_data[team_data['runs_off_bat'] == 6])
+            dots = len(team_data[team_data['runs_off_bat'] == 0])
+            singles = len(team_data[team_data['runs_off_bat'] == 1])
+            twos = len(team_data[team_data['runs_off_bat'] == 2])
+            threes = len(team_data[team_data['runs_off_bat'] == 3])
+            
+            # Calculate totals
+            total_boundaries = fours + sixes
+            total_runs_from_boundaries = (fours * 4) + (sixes * 6)
+            total_runs = int(team_data['runs_off_bat'].sum())
+            
+            # Calculate percentages
+            four_pct = round((fours / total_balls) * 100, 1)
+            six_pct = round((sixes / total_balls) * 100, 1)
+            boundary_pct = round((total_boundaries / total_balls) * 100, 1)
+            dot_pct = round((dots / total_balls) * 100, 1)
+            scoring_pct = round(((total_balls - dots) / total_balls) * 100, 1)
+            boundary_runs_pct = round((total_runs_from_boundaries / total_runs) * 100, 1) if total_runs > 0 else 0
+            
+            # Add rows for each category
+            results.append({
+                'team': team,
+                'category': 'Fours (4s)',
+                'type': 'Boundary',
+                'count': fours,
+                'percentage': four_pct,
+                'color': '#9c27b0'
+            })
+            results.append({
+                'team': team,
+                'category': 'Sixes (6s)',
+                'type': 'Boundary',
+                'count': sixes,
+                'percentage': six_pct,
+                'color': '#ff0000'
+            })
+            results.append({
+                'team': team,
+                'category': 'Dot Balls',
+                'type': 'Defense',
+                'count': dots,
+                'percentage': dot_pct,
+                'color': '#808080'
+            })
+            results.append({
+                'team': team,
+                'category': 'Singles (1s)',
+                'type': 'Rotation',
+                'count': singles,
+                'percentage': round((singles / total_balls) * 100, 1),
+                'color': '#00ff00'
+            })
+            results.append({
+                'team': team,
+                'category': 'Twos (2s)',
+                'type': 'Running',
+                'count': twos,
+                'percentage': round((twos / total_balls) * 100, 1),
+                'color': '#2196f3'
+            })
+        
+        if len(results) == 0:
+            return None
+        
+        chart_df = pd.DataFrame(results)
+        
+        # Create grouped bar chart
+        bars = alt.Chart(chart_df).mark_bar(
+            cornerRadiusTopLeft=8,
+            cornerRadiusTopRight=8,
+            opacity=0.9
+        ).encode(
+            x=alt.X('category:N', 
+                    title='Ball Type',
+                    axis=alt.Axis(labelAngle=-45, labelFontSize=11)),
+            y=alt.Y('percentage:Q', 
+                    title='Percentage of Balls (%)',
+                    axis=alt.Axis(labelFontSize=12, titleFontSize=14)),
+            xOffset=alt.XOffset('team:N', title='Team'),
+            color=alt.Color('team:N',
+                           title='Team',
+                           scale=alt.Scale(scheme='set2'),
+                           legend=alt.Legend(
+                               orient='top',
+                               titleFontSize=13,
+                               labelFontSize=12
+                           )),
+            tooltip=[
+                alt.Tooltip('team:N', title='🏏 Team'),
+                alt.Tooltip('category:N', title='📊 Category'),
+                alt.Tooltip('count:Q', title='⚾ Count'),
+                alt.Tooltip('percentage:Q', title='📈 Percentage', format='.1f'),
+            ]
+        )
+        
+        # Add text labels showing percentages
+        text = alt.Chart(chart_df).mark_text(
+            align='center',
+            baseline='bottom',
+            dy=-5,
+            fontSize=11,
+            fontWeight='bold',
+            color='#333333'
+        ).encode(
+            x=alt.X('category:N'),
+            y=alt.Y('percentage:Q'),
+            xOffset=alt.XOffset('team:N'),
+            text=alt.Text('percentage:Q', format='.1f')
+        )
+        
+        # Combine layers
+        chart = (bars + text).properties(
+            width=800,
+            height=500,
+            title={
+                'text': ['Boundary & Dot Ball Analysis - Team Comparison'],
+                'subtitle': [
+                    'Compare attacking intent (boundaries) vs defensive play (dots) between teams',
+                    'Higher boundary % = More aggressive | Higher dot % = More defensive'
+                ],
+                'fontSize': 18,
+                'fontWeight': 'bold',
+                'subtitleFontSize': 12,
+                'subtitleColor': '#555555',
+                'anchor': 'start',
+                'offset': 15
+            }
+        ).configure_axis(
+            labelFontSize=11,
+            titleFontSize=14,
+            titleFontWeight='bold',
+            gridOpacity=0.3
+        ).configure_view(
+            strokeWidth=0,
+            fill='#fafafa'
+        ).interactive()
+        
+        return chart
+    
+    def create_runs_over_progression(df, team, phase=None):
+        """Create runs progression over overs using Altair"""
+        team_data = df[df['batting_team'] == team].copy()
+        if phase:
+            team_data = team_data[team_data['phase'] == phase]
+        
+        # Group by over and calculate cumulative runs
+        over_runs = team_data.groupby('over')['runs_off_bat'].sum().reset_index()
+        over_runs['cumulative_runs'] = over_runs['runs_off_bat'].cumsum()
+        
+        # Line chart for cumulative runs
+        line = alt.Chart(over_runs).mark_line(
+            color='#667eea',
+            strokeWidth=3,
+            point=alt.OverlayMarkDef(color='#764ba2', size=60)
+        ).encode(
+            x=alt.X('over:Q', title='Over', scale=alt.Scale(domain=[0, 20])),
+            y=alt.Y('cumulative_runs:Q', title='Cumulative Runs'),
+            tooltip=[
+                alt.Tooltip('over:Q', title='Over'),
+                alt.Tooltip('runs_off_bat:Q', title='Runs in Over'),
+                alt.Tooltip('cumulative_runs:Q', title='Total Runs')
+            ]
+        )
+        
+        # Bar chart for runs per over
+        bars = alt.Chart(over_runs).mark_bar(
+            opacity=0.3,
+            color='#f093fb'
+        ).encode(
+            x=alt.X('over:Q', title='Over'),
+            y=alt.Y('runs_off_bat:Q', title='Runs per Over'),
+            tooltip=[
+                alt.Tooltip('over:Q', title='Over'),
+                alt.Tooltip('runs_off_bat:Q', title='Runs')
+            ]
+        )
+        
+        chart = (bars + line).properties(
+            width=700,
+            height=400,
+            title=f'{team} - Runs Progression Over Overs'
+        ).interactive()
+        
+        return chart
+    
+    def create_wicket_timeline(df, bowling_team, phase=None):
+        """Create wicket fall timeline using Altair"""
+        team_data = df[df['bowling_team'] == bowling_team].copy()
+        if phase:
+            team_data = team_data[team_data['phase'] == phase]
+        
+        wickets = team_data[team_data['is_wicket'] == 1].copy()
+        
+        if wickets.empty:
+            return None
+        
+        wickets['wicket_num'] = range(1, len(wickets) + 1)
+        
+        chart = alt.Chart(wickets).mark_circle(size=200).encode(
+            x=alt.X('over:Q', title='Over', scale=alt.Scale(domain=[0, 20])),
+            y=alt.Y('wicket_num:Q', title='Wicket Number'),
+            color=alt.Color('wicket_type:N', title='Dismissal Type', scale=alt.Scale(scheme='set2')),
+            tooltip=[
+                alt.Tooltip('over:Q', title='Over'),
+                alt.Tooltip('batter:N', title='Batter Out'),
+                alt.Tooltip('bowler:N', title='Bowler'),
+                alt.Tooltip('wicket_type:N', title='Dismissal')
+            ]
+        ).properties(
+            width=700,
+            height=400,
+            title=f'{bowling_team} - Wicket Fall Timeline'
+        ).interactive()
+        
+        return chart
+    
+    def create_bowler_economy_chart(df, team, phase=None):
