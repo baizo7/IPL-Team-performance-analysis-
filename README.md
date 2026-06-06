@@ -10,6 +10,9 @@ A highly interactive, deeply analytical, and visually stunning web application b
 
 Experience this on----> https://67jbqtnspdombpagauxc2r.streamlit.app/
 
+username : demo
+password : demo 
+
 ## ✨ Features
 
 *   **Secure Authenticated Access:** Clean, secure login panel protecting your analytics dashboard.
