@@ -1676,8 +1676,7 @@ def render_legacy():
                     [1.0, "rgba(244, 63, 94, 1.0)"]
                 ],
                 colorbar=dict(
-                    title="Strike Rate",
-                    titleside="top",
+                    title=dict(text="Strike Rate", side="top", font=dict(color='#94a3b8')),
                     len=0.45,
                     y=0.78,
                     tickfont=dict(color='#94a3b8')
