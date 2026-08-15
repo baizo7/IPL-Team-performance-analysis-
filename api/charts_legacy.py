@@ -22,7 +22,7 @@ def create_runs_distribution_chart(df, team, phase=None):
     total_balls = len(team_data)
     runs_counts['percentage'] = ((runs_counts['count'] / total_balls) * 100).round(1)
     
-    # Add cumulative percentage
+    # Calculate cumulative percentage
     runs_counts['cumulative_pct'] = runs_counts['percentage'].cumsum().round(1)
     
     # Create color mapping for different run types (Neon themed)
@@ -97,9 +97,7 @@ def create_runs_distribution_chart(df, team, phase=None):
         )
     )
     
-    chart = fig
-    
-    return chart
+    return fig
 
 def create_strike_rate_comparison(df, phase=None):
     """Create strike rate comparison chart for top strikers across teams using Plotly"""
@@ -116,7 +114,7 @@ def create_strike_rate_comparison(df, phase=None):
     
     striker_stats = striker_stats[striker_stats['ball'] >= 50]
     striker_stats['strike_rate'] = (striker_stats['runs_off_bat'] / striker_stats['ball'] * 100).round(2)
-    striker_stats = striker_stats.sort_values('strike_rate', ascending=True).tail(15) # Ascending for horizontal bar
+    striker_stats = striker_stats.sort_values('strike_rate', ascending=True).tail(15)
     
     fig = go.Figure()
     
@@ -197,7 +195,7 @@ def create_boundary_percentage_chart(df, teams, phase=None):
     fig = go.Figure()
     
     categories = ['Dot Balls', 'Singles (1s)', 'Twos (2s)', 'Fours (4s)', 'Sixes (6s)']
-    colors = ['#3b82f6', '#f43f5e'] # Blue and Rose for the two teams
+    colors = ['#3b82f6', '#f43f5e']
     
     for idx, team in enumerate(teams):
         team_df = chart_df[chart_df['team'] == team]
@@ -273,7 +271,7 @@ def create_runs_over_progression(df, team, phase=None):
             x=over_runs['over'],
             y=over_runs['runs_off_bat'],
             name="Runs per Over",
-            marker_color='rgba(236, 72, 153, 0.5)', # Pink transparent
+            marker_color='rgba(236, 72, 153, 0.5)',
             marker_line_color='rgba(236, 72, 153, 1)',
             marker_line_width=1.5,
             opacity=0.8
@@ -287,7 +285,7 @@ def create_runs_over_progression(df, team, phase=None):
             y=over_runs['cumulative_runs'],
             name="Cumulative Runs",
             mode='lines+markers',
-            line=dict(color='#60a5fa', width=3), # Blue
+            line=dict(color='#60a5fa', width=3),
             marker=dict(size=8, color='#3b82f6', line=dict(color='white', width=1)),
         ),
         secondary_y=True,
@@ -345,14 +343,13 @@ def create_wicket_timeline(df, bowling_team, phase=None):
     
     fig = go.Figure()
     
-    # Group by wicket type for different colors in legend
     for w_type in wickets['wicket_type'].unique():
         w_data = wickets[wickets['wicket_type'] == w_type]
         fig.add_trace(go.Scatter(
             x=w_data['over'],
             y=w_data['wicket_num'],
             mode='markers',
-            name=w_type,
+            name=str(w_type),
             marker=dict(
                 size=16,
                 line=dict(color='rgba(255,255,255,0.8)', width=1.5),
@@ -384,7 +381,7 @@ def create_wicket_timeline(df, bowling_team, phase=None):
             title="Wicket Number",
             showgrid=True,
             gridcolor='rgba(255,255,255,0.05)',
-            autorange="reversed", # Show first wicket at top
+            autorange="reversed",
             tickfont=dict(size=11, color='#94a3b8'),
             tickmode='linear',
             tick0=1, dtick=1
@@ -404,7 +401,69 @@ def create_wicket_timeline(df, bowling_team, phase=None):
     return fig
 
 def create_bowler_economy_chart(df, team, phase=None):
-    """Create comprehensive bowler economy rate analysis from scratch"""
-    # Filter data for bowling team
+    """Create comprehensive bowler economy rate analysis using Plotly"""
+    import plotly.graph_objects as go
+    import pandas as pd
+
     team_data = df[df['bowling_team'] == team].copy()
-    
+    if phase:
+        team_data = team_data[team_data['phase'] == phase]
+
+    if len(team_data) == 0:
+        return None
+
+    bowler_stats = team_data.groupby('bowler').agg({
+        'runs_off_bat': 'sum',
+        'extras': 'sum',
+        'ball': 'count',
+        'is_wicket': 'sum'
+    }).reset_index()
+
+    bowler_stats = bowler_stats[bowler_stats['ball'] >= 18].copy()
+    if len(bowler_stats) == 0:
+        return None
+
+    bowler_stats['overs'] = (bowler_stats['ball'] / 6).round(1)
+    bowler_stats['total_runs'] = bowler_stats['runs_off_bat'] + bowler_stats['extras']
+    bowler_stats['economy'] = (bowler_stats['total_runs'] / bowler_stats['overs']).round(2)
+    bowler_stats = bowler_stats.sort_values('economy', ascending=True).head(10)
+
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=bowler_stats['economy'],
+        y=bowler_stats['bowler'],
+        orientation='h',
+        text=[f"<b>{econ}</b>" for econ in bowler_stats['economy']],
+        textposition='auto',
+        marker=dict(
+            color=bowler_stats['economy'],
+            colorscale='Emerald',
+            reversescale=True,
+            line=dict(color='rgba(255,255,255,0.2)', width=1)
+        ),
+        hovertemplate="<b>%{y}</b><br>Economy: %{x}<br>Overs: %{customdata[0]}<br>Wickets: %{customdata[1]}<extra></extra>",
+        customdata=bowler_stats[['overs', 'is_wicket']]
+    ))
+
+    fig.update_layout(
+        title=dict(
+            text=f"<b>{team} - Top Bowler Economy Profiles</b>",
+            font=dict(size=16, color='#f8fafc'),
+            x=0.5,
+            xanchor='center'
+        ),
+        paper_bgcolor='rgba(15, 23, 42, 0)',
+        plot_bgcolor='rgba(15, 23, 42, 0)',
+        font=dict(color='#e2e8f0', family='Segoe UI'),
+        xaxis=dict(
+            title="Economy Rate (Runs/Over)",
+            showgrid=True,
+            gridcolor='rgba(255,255,255,0.05)',
+            tickfont=dict(size=11, color='#94a3b8')
+        ),
+        yaxis=dict(showgrid=False, tickfont=dict(size=12, color='#e2e8f0', weight='bold')),
+        margin=dict(t=70, b=40, l=120, r=40),
+        height=400,
+        hoverlabel=dict(bgcolor="rgba(15, 23, 42, 0.9)", font_size=13)
+    )
+    return fig

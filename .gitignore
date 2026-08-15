@@ -1,9 +1,11 @@
 venv/
 .venv/
+.venv_new/
 __pycache__/
 *.pyc
 .streamlit/
 .env
+node_modules/
 
 # Large files and datasets
 *.mp4
@@ -11,10 +13,22 @@ __pycache__/
 *.zip
 *.exe
 *.log
-# If data/ and dataset/ and ipl_data/ are large, maybe ignore them. I will ignore specific large types.
-# data/
-# dataset/
-# ipl_data/
+*.parquet
+
+# Ignore generated data files (keep source CSVs)
+all_ipl_matches.csv
+
+# Temp / archive
+archive/
+__tmp_*
+
+# IDE
+.idea/
+.vscode/
+*.swp
 
 # Notebook checkpoints
 .ipynb_checkpoints/
+.pytest_cache/
+.coverage
+

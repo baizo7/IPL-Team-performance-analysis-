@@ -1,5 +1,4 @@
 import streamlit as st
-import legacy_app
 
 st.set_page_config(
     page_title="IPL Analytics Dashboard",
@@ -8,5 +7,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Run the legacy dashboard directly
-legacy_app.render_legacy()
+import ipl_analytics.app
+
+if __name__ == "__main__":
+    ipl_analytics.app.run_app()
