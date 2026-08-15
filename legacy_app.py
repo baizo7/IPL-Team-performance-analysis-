@@ -6968,6 +6968,24 @@ def render_legacy():
         else:
             use_hawkeye = False
 
+        st.markdown("---")
+        st.markdown("### 🔑 AI API KEY CONFIG")
+        current_key = st.session_state.get("gemini_api_key", os.environ.get("GEMINI_API_KEY", ""))
+        user_api_key = st.text_input(
+            "Gemini / OpenAI API Key",
+            type="password",
+            value=current_key,
+            placeholder="Paste AIZaSy... key here",
+            help="Paste your Google Gemini or OpenAI API key to power the AI Analyst Chatbot",
+            key="sidebar_api_key_input"
+        )
+        if user_api_key:
+            st.session_state["gemini_api_key"] = user_api_key.strip()
+            os.environ["GEMINI_API_KEY"] = user_api_key.strip()
+            st.caption("✅ Key saved & active for AI Chatbot!")
+        else:
+            st.caption("💡 Enter key to activate AI Assistant")
+
     df = filtered_df
 
     # Compact summary bar instead of large info block
