@@ -56,3 +56,8 @@ python -m unittest discover tests
    ```powershell
    uvicorn api.fastapi_app:app --reload --port 8000
    ```
+
+
+
+
+   https://67jbqtnspdombpagauxc2r.streamlit.app/
